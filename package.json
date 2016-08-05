@@ -1,0 +1,23 @@
+{
+  "name": "amtrak-charting",
+  "version": "1.0.0",
+  "description": "Scrape Amtrak's on-time data and chart it",
+  "main": "index.js",
+  "dependencies": {
+    "x-ray": "^2.3.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VTrans-Rail/amtrak-charting.git"
+  },
+  "author": "VTrans Rail",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/VTrans-Rail/amtrak-charting/issues"
+  },
+  "homepage": "https://github.com/VTrans-Rail/amtrak-charting#readme"
+}
