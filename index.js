@@ -2,8 +2,15 @@ var fs = require('fs')
 var Xray = require('x-ray');
 var x = Xray();
 
-// var html = 'http://74.242.208.76/scripts/archivefinder.pl?seltrain=56&selmonth=08&selyear=2016&selday=01'
-var html = 'http://dixielandsoftware.net/cgi-bin/gettrain.pl?seltrain=56&selyear=2016&selmonth=08&selday=03'
+// html sources
+var htmlRoot = 'http://statusmaps.com/cgi-bin/gettrain.pl?'
+var htmlBuild = []
+var seltrain = 'seltrain='
+var selyear = '&selyear='
+var selmonth = '&selmonth='
+var selday = '&selday='
+
+
 
 x(html, 'div#m1 tr', [{
   station: 'td:nth-of-type(1)',
