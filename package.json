@@ -4,7 +4,8 @@
   "description": "Scrape Amtrak's on-time data and chart it",
   "main": "index.js",
   "dependencies": {
-    "x-ray": "^2.3.0"
+    "x-ray": "^2.3.0",
+    "moment": "@2.14.1"
   },
   "devDependencies": {},
   "scripts": {
