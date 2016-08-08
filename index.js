@@ -73,6 +73,11 @@ function scrape(html, train, day, month, year) { // scrape the train data for th
 
     data.shift() // removes unnecessary first entry
     for (var i = 0; i < data.length; i++) {
+
+      // set request date
+
+      var reqDate = moment(month + day + year, 'MMDDYYYY').format('MM-DD-YYYY');
+
       // prep vars
       var timeStrings = []
 
@@ -87,14 +92,13 @@ function scrape(html, train, day, month, year) { // scrape the train data for th
           if (a) { // if a is not null
             if (a[1].indexOf('P') > -1 && parseFloat(a[1]) < 1200) { // if it is PM
               var timeNo = parseFloat(a[1]) + 1200 // turn string to number and add 1200 for military time
-              var hour = moment(timeNo, 'HH mm');
-              console.log(hour);
-              times.push(hour)
-            } else { // if it is AM
+              setTime(timeNo)
+            } else if (a[1] < 1000) { // if it is AM with 3 digit number
+              var timeNo = '0' + parseFloat(a[1]) // just turn string to number, pad with leading zero
+              setTime(timeNo)
+            } else if (a[1] > 999) {
               var timeNo = parseFloat(a[1]) // just turn string to number
-              var hour = moment(timeNo, 'hh mm').format('h mm');
-              console.log(hour);
-              times.push(timeNo)
+              setTime(timeNo)
             }
           } else { // if a it is null
             timeNo = ''
@@ -102,7 +106,13 @@ function scrape(html, train, day, month, year) { // scrape the train data for th
           }
         }) // end of timeStrings
 
-        // calculate Dwell
+      function setTime(timeNo) {
+        var min = moment(timeNo, 'HHmm')
+        var hour = moment(reqDate).hour().minute()
+        times.push(hour)
+      }
+
+      // calculate Dwell
       if (times[2] && times[3]) { // if have both act Ar and Dp
         var dwell = times[3] - times[2]
       } else {
@@ -112,13 +122,12 @@ function scrape(html, train, day, month, year) { // scrape the train data for th
       // calculate departure delay
       if (times[3] && times[1]) {
         var depDel = times[3] - times[1]
-      }
-      else {
+      } else {
         var depDel = ''
       }
 
       // write vars to csvString
-      csvString += train + ', ' + month + '-' + day + '-' + year + ', '
+      csvString += train + ', ' + reqDate + ','
       csvString += data[i].station.replace(/,/g, "") + ', ' // take first value in data[]
       csvString += times.join(',') + ', ' // join together all the times[] values
       csvString += depDel + ', '
