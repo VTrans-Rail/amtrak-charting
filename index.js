@@ -1,9 +1,11 @@
 var fs = require('fs')
 var Xray = require('x-ray');
+var moment = require('moment');
+moment().format();
 var x = Xray();
 
 // start of CSV file
-var csvHead = 'Train, Date, Station, Scheduled Arrival, Scheduled Departure, Actual Arrival, Actual Departure, Dwell \n'
+var csvHead = 'Train, Date, Station, Scheduled Arrival, Scheduled Departure, Actual Arrival, Actual Departure, Departure Delay, Dwell \n'
 fs.writeFile('out.csv', csvHead)
 var csvString = ''
 
@@ -16,9 +18,9 @@ var selday = '&selday='
 
 // dates and trains to scrape
 var years = [2016];
-var months = ['08'];
+var months = ['07'];
 var days = [];
-for (var i = 1; i < 32; i++) { // push int 1-31 into days[]
+for (var i = 1; i < 3; i++) { // push int 1-31 into days[]
   if (i < 10) { // needs to be a string number padded with a zero
     days.push('0' + i)
   } else {
@@ -85,9 +87,13 @@ function scrape(html, train, day, month, year) { // scrape the train data for th
           if (a) { // if a is not null
             if (a[1].indexOf('P') > -1 && parseFloat(a[1]) < 1200) { // if it is PM
               var timeNo = parseFloat(a[1]) + 1200 // turn string to number and add 1200 for military time
-              times.push(timeNo)
+              var hour = moment(timeNo, 'HH mm');
+              console.log(hour);
+              times.push(hour)
             } else { // if it is AM
               var timeNo = parseFloat(a[1]) // just turn string to number
+              var hour = moment(timeNo, 'hh mm').format('h mm');
+              console.log(hour);
               times.push(timeNo)
             }
           } else { // if a it is null
@@ -96,16 +102,26 @@ function scrape(html, train, day, month, year) { // scrape the train data for th
           }
         }) // end of timeStrings
 
+        // calculate Dwell
       if (times[2] && times[3]) { // if have both act Ar and Dp
         var dwell = times[3] - times[2]
       } else {
         var dwell = ''
       }
 
+      // calculate departure delay
+      if (times[3] && times[1]) {
+        var depDel = times[3] - times[1]
+      }
+      else {
+        var depDel = ''
+      }
+
       // write vars to csvString
       csvString += train + ', ' + month + '-' + day + '-' + year + ', '
       csvString += data[i].station.replace(/,/g, "") + ', ' // take first value in data[]
       csvString += times.join(',') + ', ' // join together all the times[] values
+      csvString += depDel + ', '
       csvString += dwell // add dwell
       csvString += "\n"
     }
