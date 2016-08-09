@@ -107,9 +107,10 @@ function scrape(html, train, day, month, year) { // scrape the train data for th
         }) // end of timeStrings
 
       function setTime(timeNo) {
-        var min = moment(timeNo, 'HHmm')
-        var hour = moment(reqDate).hour().minute()
-        times.push(hour)
+        var min = timeNo.toString().substr(0,1)
+        var hr = timeNo.toString().substr(2,3)
+        var time = reqDate.add(hr, 'h').add(min, 'm');
+        times.push(time)
       }
 
       // calculate Dwell
