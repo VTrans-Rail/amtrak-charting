@@ -20,14 +20,14 @@ var selday = '&selday='
 var years = [2016];
 var months = ['07'];
 var days = [];
-for (var i = 1; i < 3; i++) { // push int 1-31 into days[]
+for (var i = 1; i < 2; i++) { // push int 1-31 into days[]
   if (i < 10) { // needs to be a string number padded with a zero
     days.push('0' + i)
   } else {
     days.push(i.toString())
   }
 }
-var trains = [55, 56];
+var trains = [55];
 
 // loop through the date and train variables to scrape
 years.forEach(function(year) {
@@ -72,11 +72,11 @@ function scrape(html, train, day, month, year) { // scrape the train data for th
 
 
     data.shift() // removes unnecessary first entry
-    for (var i = 0; i < data.length; i++) {
+    for (var i = 0; i < data.length; i++) { // loop through every data entry
 
       // set request date
 
-      var reqDate = moment(month + day + year, 'MMDDYYYY').format('MM-DD-YYYY');
+      var trainDay = moment(month + day + year, 'MMDDYYYY')
 
       // prep vars
       var timeStrings = []
@@ -89,16 +89,17 @@ function scrape(html, train, day, month, year) { // scrape the train data for th
       var times = []
 
       timeStrings.forEach(function setNum(a) { // process time strings to extract numbers, set PM
+        var reqDate = moment(month + day + year, 'MMDDYYYY')
           if (a) { // if a is not null
             if (a[1].indexOf('P') > -1 && parseFloat(a[1]) < 1200) { // if it is PM
               var timeNo = parseFloat(a[1]) + 1200 // turn string to number and add 1200 for military time
-              setTime(timeNo)
-            } else if (a[1] < 1000) { // if it is AM with 3 digit number
+              setTime(timeNo, reqDate)
+            } else if (parseFloat(a[1]) < 1000) { // if it is AM with 3 digit number
               var timeNo = '0' + parseFloat(a[1]) // just turn string to number, pad with leading zero
-              setTime(timeNo)
-            } else if (a[1] > 999) {
+              setTime(timeNo, reqDate)
+            } else if (parseFloat(a[1]) > 999) {
               var timeNo = parseFloat(a[1]) // just turn string to number
-              setTime(timeNo)
+              setTime(timeNo, reqDate)
             }
           } else { // if a it is null
             timeNo = ''
@@ -106,29 +107,32 @@ function scrape(html, train, day, month, year) { // scrape the train data for th
           }
         }) // end of timeStrings
 
-      function setTime(timeNo) {
-        var min = timeNo.toString().substr(0,1)
-        var hr = timeNo.toString().substr(2,3)
-        var time = reqDate.add(hr, 'h').add(min, 'm');
+      function setTime(timeNo, reqDate) {
+        var min = timeNo.toString().substr(2,3)
+        var hr = timeNo.toString().substr(0,2)
+        var time = reqDate.add(hr, 'h').add(min, 'm').format('HH:mm');
         times.push(time)
       }
 
       // calculate Dwell
       if (times[2] && times[3]) { // if have both act Ar and Dp
-        var dwell = times[3] - times[2]
+        var dwell = moment(times[3],'m').subtract(times[2], 'm').format('HH:mm')
       } else {
         var dwell = ''
       }
 
       // calculate departure delay
       if (times[3] && times[1]) {
-        var depDel = times[3] - times[1]
+        var actDep = moment(times[3],'HH:mm');
+        var schedDep = moment(times[1], 'HH:mm');
+        var depDel = moment(actDep - schedDep)
+        // TODO: FIX THE DEPARTURE DELAY CALCULUS
       } else {
         var depDel = ''
       }
 
       // write vars to csvString
-      csvString += train + ', ' + reqDate + ','
+      csvString += train + ', ' + trainDay.format('MM-DD-YYYY') + ', '
       csvString += data[i].station.replace(/,/g, "") + ', ' // take first value in data[]
       csvString += times.join(',') + ', ' // join together all the times[] values
       csvString += depDel + ', '
