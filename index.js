@@ -116,7 +116,9 @@ function scrape(html, train, day, month, year) { // scrape the train data for th
 
       // calculate Dwell
       if (times[2] && times[3]) { // if have both act Ar and Dp
-        var dwell = moment(times[3],'m').subtract(times[2], 'm').format('HH:mm')
+        var actArr = moment(times[2], 'HH:mm')
+        var actDep = moment(times[3], 'HH:mm')
+        var dwell = actDep.diff(actArr, 'm')
       } else {
         var dwell = ''
       }
@@ -125,8 +127,7 @@ function scrape(html, train, day, month, year) { // scrape the train data for th
       if (times[3] && times[1]) {
         var actDep = moment(times[3],'HH:mm');
         var schedDep = moment(times[1], 'HH:mm');
-        var depDel = moment(actDep - schedDep)
-        // TODO: FIX THE DEPARTURE DELAY CALCULUS
+        var depDel = actDep.diff(schedDep, 'm')
       } else {
         var depDel = ''
       }
