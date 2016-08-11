@@ -30,10 +30,10 @@ for (var i = 1; i < 32; i++) { // push int 1-31 into days[]
 var trains = [55,56];
 
 // loop through the date and train variables to scrape
-years.forEach(function(year) {
-  months.forEach(function(month) {
-    days.forEach(function(day) {
-      trains.forEach(function(train) {
+years.forEach(function eachYear(year) {
+  months.forEach(function eachMonth(month) {
+    days.forEach(function eachDay(day) {
+      trains.forEach(function eachTrain(train) {
         var html = htmlRoot + seltrain + train + selmonth + month + selyear + year + selday + day;
         check(html, train, day, month, year)
       })
@@ -58,6 +58,7 @@ function check(html, train, day, month, year) { // check if there is train data 
 }
 
 function scrape(html, train, day, month, year) { // scrape the train data for the given day
+  var data = []; // clear out data to start to avoid duplicates
   x(html, 'div#m1 tr', [{
     station: 'td:nth-of-type(1)',
     scheduled: 'td:nth-of-type(2)',
@@ -141,7 +142,9 @@ function scrape(html, train, day, month, year) { // scrape the train data for th
       csvString += "\n"
     }
 
-    fs.appendFile('out.csv', csvString)
+    console.log("Train " + train + " on " + month + "-" + day + " scraped.");
+
 
   })
+  fs.appendFile('out.csv', csvString)
 } // end scrape function
