@@ -20,14 +20,14 @@ var selday = '&selday='
 var years = [2016];
 var months = ['07'];
 var days = [];
-for (var i = 1; i < 2; i++) { // push int 1-31 into days[]
+for (var i = 1; i < 32; i++) { // push int 1-31 into days[]
   if (i < 10) { // needs to be a string number padded with a zero
     days.push('0' + i)
   } else {
     days.push(i.toString())
   }
 }
-var trains = [55];
+var trains = [55,56];
 
 // loop through the date and train variables to scrape
 years.forEach(function(year) {
