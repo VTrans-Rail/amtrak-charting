@@ -28,6 +28,7 @@ for (var i = 1; i < 32; i++) { // push int 1-31 into days[]
   }
 }
 var trains = [55,56];
+var requests = []; // will hold the vars for the URL
 
 // loop through the date and train variables to scrape
 years.forEach(function eachYear(year) {
@@ -35,49 +36,66 @@ years.forEach(function eachYear(year) {
     days.forEach(function eachDay(day) {
       trains.forEach(function eachTrain(train) {
         var html = htmlRoot + seltrain + train + selmonth + month + selyear + year + selday + day;
-        check(html, train, day, month, year)
+        requests.push({html: html, train: train, day: day, month: month, year: year})
+        // console.log(requests);
       })
     })
   })
 })
 
+check()
 
-function check(html, train, day, month, year) { // check if there is train data for that day
-  x(html, 'h2')(function(err, data) {
-    if (err) {
-      console.error(err);
+function check() {
+  if (!requests.length) return; // if it's empty, you're done
+  var reqParams = requests.pop();
+
+  x(reqParams.html, 'h2')(function(err, data){
+    if (err) { console.error(err)
     } else if (data.includes("Sorry.  No status file was found")) { // page content if no train
-      console.log("Nothing for train " + train + " on " + month + '-' + day + '-' + year);
-      return
+      console.log("Nothing for train " + reqParams.train + " on " + reqParams.month + "-" + reqParams.day + "-" + reqParams.year);
+      return check();
     } else {
-      console.log("scraping train " + train + " on " + month + '-' + day + '-' + year);
-      scrape(html, train, day, month, year)
-    }
+        console.log("Scraping data for " + reqParams.train + " on " + reqParams.month + "-" + reqParams.day + "-" + reqParams.year);
+        scrape(reqParams)
+      }
   })
-
 }
 
-function scrape(html, train, day, month, year) { // scrape the train data for the given day
+// function check(html, train, day, month, year) { // check if there is train data for that day
+//   x(html, 'h2')(function(err, data) {
+//     if (err) {
+//       console.error(err);
+//     } else if (data.includes("Sorry.  No status file was found")) { // page content if no train
+//       console.log("Nothing for train " + train + " on " + month + '-' + day + '-' + year);
+//       return
+//     } else {
+//       console.log("scraping train " + train + " on " + month + '-' + day + '-' + year);
+//       scrape(html, train, day, month, year)
+//     }
+//   })
+//
+// }
+
+function scrape(reqParams) { // scrape the train data for the given day
   var data = []; // clear out data to start to avoid duplicates
-  x(html, 'div#m1 tr', [{
+  x(reqParams.html, 'div#m1 tr', [{
     station: 'td:nth-of-type(1)',
     scheduled: 'td:nth-of-type(2)',
     actual: 'td:nth-of-type(3)'
-  }])(function(err, data) {
-    if (err) {
-      return console.log(err);
-    }
+  }])((function(err, data) {
+    if (err) { return console.log(err); }
 
+    // setup regular expressions to parse scheduled and actual columns
     var ArRegex = /ar\s+(\d+(a|p))/i;
     var DpRegex = /dp\s+(\d+(a|p))/i;
 
-
     data.shift() // removes unnecessary first entry
+
     for (var i = 0; i < data.length; i++) { // loop through every data entry
 
       // set request date
 
-      var trainDay = moment(month + day + year, 'MMDDYYYY')
+      var trainDay = moment(reqParams.month + reqParams.day + reqParams.year, 'MMDDYYYY')
 
       // prep vars
       var timeStrings = []
@@ -90,7 +108,7 @@ function scrape(html, train, day, month, year) { // scrape the train data for th
       var times = []
 
       timeStrings.forEach(function setNum(a) { // process time strings to extract numbers, set PM
-        var reqDate = moment(month + day + year, 'MMDDYYYY')
+        var reqDate = moment(reqParams.month + reqParams.day + reqParams.year, 'MMDDYYYY')
           if (a) { // if a is not null
             if (a[1].indexOf('P') > -1 && parseFloat(a[1]) < 1200) { // if it is PM
               var timeNo = parseFloat(a[1]) + 1200 // turn string to number and add 1200 for military time
@@ -134,7 +152,7 @@ function scrape(html, train, day, month, year) { // scrape the train data for th
       }
 
       // write vars to csvString
-      csvString += train + ', ' + trainDay.format('MM-DD-YYYY') + ', '
+      csvString += reqParams.train + ', ' + trainDay.format('MM-DD-YYYY') + ', '
       csvString += data[i].station.replace(/,/g, "") + ', ' // take first value in data[]
       csvString += times.join(',') + ', ' // join together all the times[] values
       csvString += depDel + ', '
@@ -142,9 +160,10 @@ function scrape(html, train, day, month, year) { // scrape the train data for th
       csvString += "\n"
     }
 
-    console.log("Train " + train + " on " + month + "-" + day + " scraped.");
+    console.log("Train " + reqParams.train + " on " + reqParams.month + "-" + reqParams.day + " scraped.");
 
 
-  })
+  })) //end then
+  return check()
   fs.appendFile('out.csv', csvString)
 } // end scrape function
