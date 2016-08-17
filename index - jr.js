@@ -11,7 +11,6 @@ var csvString = ''
 
 // html string roots
 var htmlRoot = 'http://statusmaps.com/cgi-bin/gettrain.pl?'
-// var htmlRoot = 'http://74.242.208.153/scripts/archivefinder.pl?'
 var seltrain = 'seltrain='
 var selyear = '&selyear='
 var selmonth = '&selmonth='
@@ -44,31 +43,59 @@ years.forEach(function eachYear(year) {
   })
 })
 
-check()
+var missedResults = []
+var k = 0
+check(requests)
 
-function check() {
-  if (!requests.length) return; // if it's empty, you're done
-  var reqParams = requests.pop();
-
-  x(reqParams.html, 'h2')(function(err, data){
-    if (err) { console.error(err)
-    } else if (data.includes("Sorry.  No status file was found")) { // page content if no train
-      console.log("Nothing for train " + reqParams.train + " on " + reqParams.month + "-" + reqParams.day + "-" + reqParams.year);
-      return check();
-    } else {
+function check(requests) {
+  for (var i = 0; i < requests.length; i++) {
+    var reqParams = requests[i];
+    x.delay(500);
+    x(reqParams.html, 'h2')(function(err, data){
+      if (err) {
+        console.error(err)
+        missedResults.push(reqParams)
+      } else if (data.includes("Sorry.  No status file was found")) { // page content if no train
+        console.log("Nothing for train " + reqParams.train + " on " + reqParams.month + "-" + reqParams.day + "-" + reqParams.year);
+      } else {
         console.log("Scraping data for " + reqParams.train + " on " + reqParams.month + "-" + reqParams.day + "-" + reqParams.year);
-        scrape(reqParams)
+        scrape(reqParams);
       }
-  })
+    })
+  }
+if (k<2) {
+  k++
+  check(missedResults)
+
 }
+else {
+  console.log(missedResults);
+}
+}
+
+// function check(html, train, day, month, year) { // check if there is train data for that day
+//   x(html, 'h2')(function(err, data) {
+//     if (err) {
+//       console.error(err);
+//     } else if (data.includes("Sorry.  No status file was found")) { // page content if no train
+//       console.log("Nothing for train " + train + " on " + month + '-' + day + '-' + year);
+//       return
+//     } else {
+//       console.log("scraping train " + train + " on " + month + '-' + day + '-' + year);
+//       scrape(html, train, day, month, year)
+//     }
+//   })
+//
+// }
 
 function scrape(reqParams) { // scrape the train data for the given day
   var data = []; // clear out data to start to avoid duplicates
+  x.delay(500);
   x(reqParams.html, 'div#m1 tr', [{
     station: 'td:nth-of-type(1)',
     scheduled: 'td:nth-of-type(2)',
     actual: 'td:nth-of-type(3)'
-  }])((function(err, data) {
+  }])(function(err, data) {
     if (err) { return console.log(err); }
 
     // setup regular expressions to parse scheduled and actual columns
@@ -76,8 +103,6 @@ function scrape(reqParams) { // scrape the train data for the given day
     var DpRegex = /dp\s+(\d+(a|p))/i;
 
     data.shift() // removes unnecessary first entry
-
-    csvString = ''
 
     for (var i = 0; i < data.length; i++) { // loop through every data entry
 
@@ -149,15 +174,7 @@ function scrape(reqParams) { // scrape the train data for the given day
     }
 
     console.log("Train " + reqParams.train + " on " + reqParams.month + "-" + reqParams.day + " scraped.");
-
-
-  })) //end then
-  fs.appendFile('out.csv', csvString)
-  try {
-    check()
-  } catch (e) {
-      console.log(e);
-  } finally {
-
-  }
+    fs.appendFile('out.csv', csvString)
+    csvString = '' // clear out previous values before appending new data
+  })
 } // end scrape function
